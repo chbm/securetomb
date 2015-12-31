@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'cloudvault'
+require './lib/cloudvault'
 require 'clamp'
 
 Clamp do
@@ -12,4 +12,8 @@ Clamp do
 	subcommand ["sync"], "make the magic" do
 		# XXX
 	end
+
+end
+
+CloudVault.new
 

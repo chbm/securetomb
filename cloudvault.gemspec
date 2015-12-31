@@ -3,7 +3,7 @@ lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
-  spec.name          = "cloudvault"
+  spec.name          = "securetomb"
   spec.version       = '1.0'
   spec.authors       = ["Carlos Morgado"]
   spec.email         = ["chbm@primatas.org"]
@@ -13,7 +13,11 @@ Gem::Specification.new do |spec|
   spec.license       = "MIT"
 
   spec.files         = ['lib/cloudvault.rb']
-  spec.executables   = ['bin/cloudvault']
+  spec.executables   = ['securetomb']
   spec.test_files    = ['tests/test_base.rb']
   spec.require_paths = ["lib"]
+	
+	spec.add_runtime_dependency "sqlite3"
+	spec.add_runtime_dependency "tempfile"
+	spec.add_runtime_dependency "clamp"
 end
