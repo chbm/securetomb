@@ -1,12 +1,18 @@
 #!/usr/bin/env ruby
 
-require './lib/cloudvault'
+require './lib/securetomb'
 require 'clamp'
 
 Clamp do
 	
 	subcommand ["init"], "Make the clouds" do
-		# XXX
+		parameter "remote", "remote url", :attribute_name => :remote
+		parameter "name", "a friendly name", :attribute_name => :name
+		parameter "path", "the local path to backup", :attribute_name => :path
+
+		def execute
+			SecureTomb.init(remote, name, path)
+		end
 	end
 
 	subcommand ["sync"], "make the magic" do
@@ -15,5 +21,4 @@ Clamp do
 
 end
 
-CloudVault.new
 

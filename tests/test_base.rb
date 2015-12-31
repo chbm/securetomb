@@ -1,10 +1,10 @@
-require "./lib/cloudvault.rb"
+require "./lib/securetomb"
 require "test/unit"
 
-class TestNAME < Test::Unit::TestCase
+class TestSecureTomb < Test::Unit::TestCase
 
-  def test_sample
-    assert_equal(4, 2+2)
+  def test_fileset
+    assert(FileSet.new)
   end
 
 end
