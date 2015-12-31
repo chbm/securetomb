@@ -9,9 +9,11 @@ Clamp do
 		parameter "remote", "remote url", :attribute_name => :remote
 		parameter "name", "a friendly name", :attribute_name => :name
 		parameter "path", "the local path to backup", :attribute_name => :path
+		parameter "cypher", "cypher suite", :attribute_name => :cypher
+		parameter "cypher_params ...", "parameters to pass to the cypher suite", :attribute_name => :cypher_params
 
 		def execute
-			SecureTomb.init(remote, name, path)
+			SecureTomb.init(remote, name, path, cypher, cypher_params)
 		end
 	end
 
