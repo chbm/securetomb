@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+require 'cloudvault'
+require 'clamp'
+
+Clamp do
+	
+	subcommand ["init"], "Make the clouds" do
+		# XXX
+	end
+
+	subcommand ["sync"], "make the magic" do
+		# XXX
+	end
+
