@@ -6,12 +6,16 @@ module SecureTomb
 	class FileSet
 		def initialize(name, path)
 			self.__startDB
-			@sql.execute("insert into meta values (?, ?)", [name, path])
+			@sql.execute("insert into meta values (?, ?, ?)", [0,name, path])
 
 		end
 
 		def sync 
 
+		end
+
+		def outstream
+			@dbfile #wll this work ? 
 		end
 
 		def __startDB
@@ -39,6 +43,7 @@ module SecureTomb
 				);
 				create index bloborder on blobs (ord);
 				create table meta (
+					dbversion integer,
 					name text,
 					localpath text
 				);

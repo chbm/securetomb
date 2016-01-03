@@ -13,8 +13,12 @@ module SecureTomb
 
 		@fileset = FileSet.new(name, path)
 		
-		@cypher = Cyphering.new(cypher_name, cypher_params) 
+		@cypher = Cyphering.new(false, @fileset.outstream, cypher_name, cypher_params) 
+	
+		@remote.putFileset(@cypher.outstream)	
 	end
 
+	def sync 
+	end
 
 end

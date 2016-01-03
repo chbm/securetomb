@@ -20,4 +20,6 @@ Gem::Specification.new do |spec|
 	spec.add_runtime_dependency "sqlite3"
 	spec.add_runtime_dependency "tempfile"
 	spec.add_runtime_dependency "clamp"
+	spec.add_runtime_dependency "rest-client"
+	spec.add_runtime_dependency "filter_io"
 end

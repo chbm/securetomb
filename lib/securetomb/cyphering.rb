@@ -1,3 +1,5 @@
+require 'filter_io'
+
 module SecureTomb
 
 	class Cyphering
@@ -7,7 +9,7 @@ module SecureTomb
 		end
 
 
-		def initialize(suite, *params)
+		def initialize(decrypt, input, suite, *params)
 
 			begin 
 				require './lib/securetomb/cyphers/' + suite
@@ -20,7 +22,18 @@ module SecureTomb
 			rescue
 				raise CypherFailed
 			end
+
+			@input = input
+			@encrypt = (not decrypt)
+			@outstream = FilterIO.new @input do |data, state|
+				if @encrypt then
+					@cypher.encrypt data
+				else 
+					@cypher.decrypt data
+				end
+			end
 		end
+		attr_reader :outstream
 	end
 
 end

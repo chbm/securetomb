@@ -25,11 +25,17 @@ module SecureTomb
 			end
 
 			begin
-				@backend =  Object.const_get('Remotes::' + @uri.scheme.upcase).new(url)
+				@backend =  Object.const_get('Remotes::' + @uri.scheme.upcase).new(@uri)
 			rescue
 				raise RemoteFailed
 			end
 		end
+
+		def method_missing(m, *args)
+			@backend.send(m, *args)
+		end
+
+		attr_reader :backend
 	end
 
 end
