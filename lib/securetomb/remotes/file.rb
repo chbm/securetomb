@@ -18,12 +18,12 @@ module Remotes
 			File.copy_stream(input, File.open(@basePath + '/blobs/' + id, 'wb'))
 		end
 
-		def getFileset
-			File.open(@basePath + '/fileset', 'rb')
+		def get(name)
+			File.open(@basePath + '/' + name, 'rb')
 		end
 
-		def putFileset(input)
-			File.copy_stream(input, File.open(@basePath + '/fileset', 'wb'))
+		def put(name, input)
+			File.copy_stream(input, File.open(@basePath + '/' + name, 'wb'))
 		end
 
 	end

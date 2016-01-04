@@ -6,7 +6,6 @@ module SecureTomb
 	class FileSet
 		def initialize(name, path)
 			self.__startDB
-			@sql.execute("insert into meta values (?, ?, ?)", [0,name, path])
 
 		end
 
@@ -42,11 +41,6 @@ module SecureTomb
 					foreign key(file) references files(id)
 				);
 				create index bloborder on blobs (ord);
-				create table meta (
-					dbversion integer,
-					name text,
-					localpath text
-				);
 			SQL
 
 		end

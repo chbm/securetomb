@@ -9,7 +9,7 @@ module SecureTomb
 		end
 
 
-		def initialize(decrypt, input, suite, *params)
+		def initialize(suite, *params)
 
 			begin 
 				require './lib/securetomb/cyphers/' + suite
@@ -23,18 +23,20 @@ module SecureTomb
 				raise CypherFailed
 			end
 
-			@input = input
-			@encrypt = (not decrypt)
-			@outstream = FilterIO.new @input do |data, state|
-				if @encrypt then
-					@cypher.encrypt data
-				else 
-					@cypher.decrypt data
-				end
+		end
+
+		def encrypt(input)
+			FilterIO.new input do |data, state|
+				@cypher.encrypt data
 			end
 		end
-		attr_reader :outstream
-	end
 
+		def decrypt(input)
+			FilterIO.new input do |data, state|
+				@cypher.decrypt data
+			end
+		end
+		
+	end
 end
 

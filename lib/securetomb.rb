@@ -1,6 +1,10 @@
+require 'json'
+require 'stringio'
+
 require './lib/securetomb/fileset'
 require './lib/securetomb/remote'
 require './lib/securetomb/cyphering'
+
 
 module SecureTomb
 
@@ -13,9 +17,16 @@ module SecureTomb
 
 		@fileset = FileSet.new(name, path)
 		
-		@cypher = Cyphering.new(false, @fileset.outstream, cypher_name, cypher_params) 
-	
-		@remote.putFileset(@cypher.outstream)	
+		@cypher = Cyphering.new(cypher_name, cypher_params) 
+
+		@remote.put('meta', StringIO.new(JSON.generate({
+			:version => 0,
+			:name => name,
+			:cyphername => cypher_name,
+			:cypherparams => cypher_params
+		})))
+
+		@remote.put('fileset', @cypher.encrypt(@fileset.outstream))
 	end
 
 	def sync 
