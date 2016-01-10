@@ -51,7 +51,7 @@ module SecureTomb
 
 		filetlist = @fileset.diff
 
-		puts filetlist
+		@fileset.sync(filetlist, @remote, @cypher)
 	end
 
 end

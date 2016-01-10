@@ -1,4 +1,5 @@
 require 'uri'
+require 'securerandom'
 
 module Remotes
 
@@ -8,14 +9,23 @@ module Remotes
 		def initialize(uri)
 			@uri = uri
 			@basePath = uri.path
+			begin
+				Dir.mkdir(@basePath + '/blobs')
+			rescue
+			end
+			if not Dir.exist?(@basePath + '/blobs') then
+				raise RuntimeError
+			end
 		end
 
 		def getBlob(id)
 			File.open(@basePath + '/blobs/' + id, 'rb')
 		end
 
-		def putBlob(id, input)
+		def putBlob(input)
+			id = SecureRandom.uuid
 			File.copy_stream(input, File.open(@basePath + '/blobs/' + id, 'wb'))
+			[id]
 		end
 
 		def get(name)

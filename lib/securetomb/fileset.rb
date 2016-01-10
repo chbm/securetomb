@@ -2,6 +2,8 @@ require 'sqlite3'
 require 'tempfile'
 require 'socket'
 require 'digest'
+require 'securerandom'
+
 
 module SecureTomb
 
@@ -9,7 +11,6 @@ module SecureTomb
 		def initialize(stream)
 			@dbfile = Tempfile.new('fsset')
 			File.copy_stream(stream, @dbfile)
-			
 			@sql = SQLite3::Database.new(@dbfile.path)
 		end
 
@@ -74,6 +75,29 @@ module SecureTomb
 			@localpath = row[0][0]
 			filelist = []
 			__walkDir('/', filelist)
+		end
+
+		def putDB(remote, cypher)
+			remote.put('fileset', cypher.encrypt(@dbfile))
+		end
+
+		def sync(filelist, remote, cypher)
+			filelist.each do |f|
+				fullp = @localpath + f
+				puts "Sync #{fullp}"
+				digest = Digest::SHA1.file(fullp).hexdigest
+				stat = File::Stat.new(fullp)
+				fstream = cypher.encrypt(File.open(fullp))
+				uuidlist = remote.putBlob(fstream)
+				@sql.execute("insert or ignore into files (path) values (?)", f)
+				@sql.execute("update files set sha1 = ?, mtime = ? where path = ?", digest, stat.mtime.to_s, f)
+				row = @sql.execute("select id from files where path = ?", f)
+				uuidlist.each_index do |i|
+					@sql.execute("insert into blobs values (?,?,?)", row[0][0], uuidlist[i], i)
+				end
+
+				putDB(remote, cypher)
+			end
 		end
 
 	end
