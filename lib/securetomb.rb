@@ -15,7 +15,7 @@ module SecureTomb
 			return nil
 		end
 
-		@fileset = FileSet.new(name, path)
+		@fileset = FileSet.fromScratch(name, path)
 		
 		@cypher = Cyphering.new(cypher_name, cypher_params) 
 
@@ -27,9 +27,31 @@ module SecureTomb
 		})))
 
 		@remote.put('fileset', @cypher.encrypt(@fileset.outstream))
+
+		puts "Initialized #{name}"
 	end
 
-	def sync 
+	def self.sync(remoteurl)
+		@remote = Remote.new(remoteurl)
+		if not @remote then # groan
+			puts "don't have a driver for that remote sorry"
+			return nil
+		end
+	
+		begin	
+			metafile = @remote.get('meta')
+		rescue Errno::ENOENT
+			raise NoTomb
+		end
+		meta = JSON.load(metafile)
+
+		@cypher = Cyphering.new(meta["cyphername"], meta["cypherparams"])
+
+		@fileset = FileSet.new(@cypher.decrypt(@remote.get('fileset')))
+
+		filetlist = @fileset.diff
+
+		puts filetlist
 	end
 
 end

@@ -18,7 +18,10 @@ Clamp do
 	end
 
 	subcommand ["sync"], "make the magic" do
-		# XXX
+		parameter "remote", "remote url", :attribute_name => :remote
+		def execute
+			SecureTomb.sync(remote)
+		end
 	end
 
 end
