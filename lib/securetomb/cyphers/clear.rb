@@ -4,10 +4,12 @@ module Cyphers
 		def initialize(*params)
 		end
 
-		def encrypt(data)
-			data
+		def start_encrypting
 		end
-		def decrypt(data)
+		def start_decrypting
+		end
+
+		def process(data, state)
 			data
 		end
 	end

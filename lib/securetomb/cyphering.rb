@@ -26,17 +26,18 @@ module SecureTomb
 		end
 
 		def encrypt(input)
+			@cypher.start_encrypting
 			FilterIO.new input do |data, state|
-				@cypher.encrypt data
+				@cypher.process(data, state)
 			end
 		end
 
 		def decrypt(input)
+			@cypher.start_decrypting
 			FilterIO.new input do |data, state|
-				@cypher.decrypt data
+				@cypher.process(data, state)
 			end
-		end
-		
+		end	
 	end
 end
 
