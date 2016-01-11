@@ -24,8 +24,8 @@ module SecureTomb
 			sql.execute_batch <<-SQL
 				create table files (
 					id integer primary key,
-					path text,
-					mtime datetime,
+					path text unique,
+					mtime integer,
 					perms smallint,
 					sha1 char(40)
 				);
@@ -62,9 +62,9 @@ module SecureTomb
 					if File.directory?(fullp)
 						__walkDir(relp + '/', filelist)
 					else
-						row = @sql.execute("select mtime, perms, sha1 from files where path = ?",f)
+						row = @sql.execute("select mtime, perms, sha1 from files where path = ?",relp)
 						if row.empty? || 
-							row[0][0] < File::Stat.new(fullp).mtime ||
+							row[0][0] < File::Stat.new(fullp).mtime.to_i ||
 							row[0][2] != Digest::SHA1.file(fullp).hexdigest then
 							filelist.push(relp)
 						end
@@ -97,7 +97,7 @@ module SecureTomb
 				uuidlist = remote.putBlob(fstream)
 				fstream.close
 				@sql.execute("insert or ignore into files (path) values (?)", f)
-				@sql.execute("update files set sha1 = ?, mtime = ? where path = ?", digest, stat.mtime.to_s, f)
+				@sql.execute("update files set sha1 = ?, mtime = ? where path = ?", digest, stat.mtime.to_i, f)
 				row = @sql.execute("select id from files where path = ?", f)
 				uuidlist.each_index do |i|
 					@sql.execute("insert into blobs values (?,?,?)", row[0][0], uuidlist[i], i)
