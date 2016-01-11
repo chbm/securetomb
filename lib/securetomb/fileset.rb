@@ -8,13 +8,17 @@ require 'securerandom'
 module SecureTomb
 
 	class FileSet
-		def initialize(stream)
+		def initialize(remote, cypher, stream=nil)
 			@dbfile = Tempfile.new('fsset')
-			File.copy_stream(stream, @dbfile)
+			if stream then
+				File.copy_stream(stream, @dbfile)
+			else
+				File.copy_stream(cypher.decrypt(remote.get('fileset')), @dbfile)
+			end
 			@sql = SQLite3::Database.new(@dbfile.path)
 		end
 
-		def self.fromScratch(name, path)
+		def self.fromScratch(name, path, remote, cypher)
 			dbfile = Tempfile.new('fsset')
 			sql = SQLite3::Database.new(dbfile.path)
 			sql.execute_batch <<-SQL
@@ -42,12 +46,12 @@ module SecureTomb
 			SQL
 			sql.execute("insert into meta values (?,?)", path, Socket.gethostname)	
 	
-			FileSet.new(dbfile)
+			FileSet.new(remote, cypher, dbfile)
 		end
 
 
 		def outstream
-			@dbfile #wll this work ? 
+			File.open(@dbfile.path, "r") 
 		end
 
 		def __walkDir(path, filelist)
@@ -78,7 +82,9 @@ module SecureTomb
 		end
 
 		def putDB(remote, cypher)
-			remote.put('fileset', cypher.encrypt(@dbfile))
+			o = self.outstream
+			remote.put('fileset', cypher.encrypt(o))
+			o.close
 		end
 
 		def sync(filelist, remote, cypher)
@@ -89,6 +95,7 @@ module SecureTomb
 				stat = File::Stat.new(fullp)
 				fstream = cypher.encrypt(File.open(fullp))
 				uuidlist = remote.putBlob(fstream)
+				fstream.close
 				@sql.execute("insert or ignore into files (path) values (?)", f)
 				@sql.execute("update files set sha1 = ?, mtime = ? where path = ?", digest, stat.mtime.to_s, f)
 				row = @sql.execute("select id from files where path = ?", f)

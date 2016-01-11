@@ -15,7 +15,6 @@ module SecureTomb
 			return nil
 		end
 
-		@fileset = FileSet.fromScratch(name, path)
 		
 		@cypher = Cyphering.new(cypher_name, cypher_params) 
 
@@ -26,7 +25,8 @@ module SecureTomb
 			:cypherparams => cypher_params
 		})))
 
-		@remote.put('fileset', @cypher.encrypt(@fileset.outstream))
+		@fileset = FileSet.fromScratch(name, path, @remote, @cypher)
+		@fileset.putDB(@remote, @cypher)
 
 		puts "Initialized #{name}"
 	end
@@ -47,7 +47,7 @@ module SecureTomb
 
 		@cypher = Cyphering.new(meta["cyphername"], meta["cypherparams"])
 
-		@fileset = FileSet.new(@cypher.decrypt(@remote.get('fileset')))
+		@fileset = FileSet.new(@remote, @cypher)
 
 		filetlist = @fileset.diff
 
