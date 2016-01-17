@@ -87,7 +87,8 @@ module Cyphers
 				if h != data.byteslice(57,40) then
 					raise Cyphers::AES256::BadSignature
 				end
-
+				@e.key= @localkey
+				@e.iv= @iv
 				@initialized = true
 
 				data[97..-1]

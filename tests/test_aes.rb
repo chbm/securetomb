@@ -13,7 +13,7 @@ module Cyphers
 	end
 end
 
-class TestAesSig < Test::Unit::TestCase
+class TestAes < Test::Unit::TestCase
 	class MockState
 		def initialize
 			@bof = true
@@ -39,13 +39,18 @@ class TestAesSig < Test::Unit::TestCase
 		assert(aes.masterkey == masterkey_check)
 
 		encryptor = aes.make_worker_to_encrypt
-		state = MockState.new
-		sig = encryptor.process("\x00", state)
+		statestart = MockState.new
+		stateend = MockState.new
+		stateend.bof= false
+		stateend.eof= true
+		cyphertext = encryptor.process("\x00", statestart) + encryptor.process("\x00", stateend)
 
+		assert(cyphertext.byteslice(0,9) == basesig_check)
 
-		assert(sig.byteslice(0,9) == basesig_check)
 
 		decryptor = aes.make_worker_to_decrypt
-		assert(decryptor.__check_signature_and_init(sig[0,97] + 'x') == 'x')	
+		part1 = decryptor.process(cyphertext.byteslice(0,98), statestart)
+	  part2 = decryptor.process(cyphertext.byteslice(98,1024), stateend)
+		assert(part1+part2 == "\x00\x00")	
 	end
 end
