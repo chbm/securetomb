@@ -1,4 +1,6 @@
 require 'filter_io'
+require "openssl"
+
 
 module SecureTomb
 
@@ -8,8 +10,11 @@ module SecureTomb
 		class CypherFailed < RuntimeError
 		end
 
+		def self.randombytes
+			OpenSSL::Random.random_bytes(32)
+		end
 
-		def initialize(suite, *params)
+		def initialize(seed, suite, *params)
 
 			begin 
 				require './lib/securetomb/cyphers/' + suite
@@ -18,24 +23,24 @@ module SecureTomb
 			end
 
 			begin
-				@cypher = Object.const_get('Cyphers::' + suite.upcase).new(params)
+				@cypher = Object.const_get('Cyphers::' + suite.upcase).new(seed, params)
 			rescue
 				raise CypherFailed
 			end
-
+			@seed = seed
 		end
 
 		def encrypt(input)
-			@cypher.start_encrypting
+			worker = @cypher.make_worker_to_encrypt
 			FilterIO.new input do |data, state|
-				@cypher.process(data, state)
+				worker.process(data, state)
 			end
 		end
 
 		def decrypt(input)
-			@cypher.start_decrypting
+			worker = @cypher.make_worker_to_decrypt
 			FilterIO.new input do |data, state|
-				@cypher.process(data, state)
+				worker.process(data, state)
 			end
 		end	
 	end

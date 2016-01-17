@@ -1,5 +1,6 @@
 require 'json'
 require 'stringio'
+require 'base64'
 
 require './lib/securetomb/fileset'
 require './lib/securetomb/remote'
@@ -15,14 +16,17 @@ module SecureTomb
 			return nil
 		end
 
-		
-		@cypher = Cyphering.new(cypher_name, cypher_params) 
+		randomseed = Cyphering.randombytes
+
+
+		@cypher = Cyphering.new(randomseed, cypher_name, cypher_params) 
 
 		@remote.put('meta', StringIO.new(JSON.generate({
 			:version => 0,
 			:name => name,
 			:cyphername => cypher_name,
-			:cypherparams => cypher_params
+			:cypherparams => cypher_params,
+			:randomseed => Base64.encode64(randomseed)
 		})))
 
 		@fileset = FileSet.fromScratch(name, path, @remote, @cypher)
@@ -45,7 +49,7 @@ module SecureTomb
 		end
 		meta = JSON.load(metafile)
 
-		@cypher = Cyphering.new(meta["cyphername"], meta["cypherparams"])
+		@cypher = Cyphering.new(Base64.decode64(meta["randomseed"]), meta["cyphername"], meta["cypherparams"])
 
 		@fileset = FileSet.new(@remote, @cypher)
 
