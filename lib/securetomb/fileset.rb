@@ -25,6 +25,7 @@ module SecureTomb
 				create table files (
 					id integer primary key,
 					path text unique,
+					size integer,
 					mtime integer,
 					perms smallint,
 					sha1 char(40)
@@ -62,10 +63,12 @@ module SecureTomb
 					if File.directory?(fullp)
 						__walkDir(relp + '/', filelist)
 					else
-						row = @sql.execute("select mtime, perms, sha1 from files where path = ?",relp)
+						row = @sql.execute("select mtime, size, perms, sha1 from files where path = ?",relp)
+						fstat = File::Stat.new(fullp)
 						if row.empty? || 
-							row[0][0] < File::Stat.new(fullp).mtime.to_i ||
-							row[0][2] != Digest::SHA1.file(fullp).hexdigest then
+							row[0][0] < fstat.mtime.to_i ||
+							row[0][1] != fstat.size ||
+							row[0][3] != Digest::SHA1.file(fullp).hexdigest then
 							filelist.push(relp)
 						end
 					end
@@ -90,14 +93,20 @@ module SecureTomb
 		def sync(filelist, remote, cypher)
 			filelist.each do |f|
 				fullp = @localpath + f
-				puts "Sync #{fullp}"
+				print "Sync #{fullp} "
 				digest = Digest::SHA1.file(fullp).hexdigest
 				stat = File::Stat.new(fullp)
-				fstream = cypher.encrypt(File.open(fullp))
-				uuidlist = remote.putBlob(fstream)
-				fstream.close
+				uuidlist = []
+				if stat.size > 0 
+					fstream = cypher.encrypt(File.open(fullp))
+					uuidlist = remote.putBlob(fstream)
+					fstream.close
+					puts "uploaded."
+				else
+					puts "nothing to upload"
+				end	
 				@sql.execute("insert or ignore into files (path) values (?)", f)
-				@sql.execute("update files set sha1 = ?, mtime = ? where path = ?", digest, stat.mtime.to_i, f)
+				@sql.execute("update files set sha1 = ?, mtime = ?, size = ? where path = ?", digest, stat.mtime.to_i, stat.size, f)
 				row = @sql.execute("select id from files where path = ?", f)
 				uuidlist.each_index do |i|
 					@sql.execute("insert into blobs values (?,?,?)", row[0][0], uuidlist[i], i)
