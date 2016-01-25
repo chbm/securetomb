@@ -13,16 +13,27 @@ Clamp do
 		parameter "cypher_params ...", "parameters to pass to the cypher suite", :attribute_name => :cypher_params
 
 		def execute
-			SecureTomb.init(remote, name, path, cypher, cypher_params)
+			tomb = SecureTomb::Make.new(remote)
+			tomb.init(name, path, cypher, cypher_params)
 		end
 	end
 
-	subcommand ["sync"], "make the magic" do
+	subcommand ["up", "syncup"], "synchronize local to remote (backup)" do
 		parameter "remote", "remote url", :attribute_name => :remote
 		def execute
-			SecureTomb.sync(remote)
+			tomb = SecureTomb::Make.new(remote)
+			tomb.syncup
 		end
 	end
+
+	subcommand ["down", "syncdown"], "sychronize remote to local (restore)" do
+		parameter "remote", "remote url", :attribute_name => :remote
+		def execute
+			tomb = SecureTomb::Make.new(remote)
+			tomb.syncdown
+		end
+	end
+
 
 end
 
