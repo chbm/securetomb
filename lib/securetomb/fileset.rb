@@ -28,7 +28,8 @@ module SecureTomb
 					size integer,
 					mtime integer,
 					perms smallint,
-					sha1 char(40)
+					sha1 char(40),
+					viewed smallint
 				);
 				create index paths on files (path);
 				create index mtimes on files (mtime);
@@ -55,65 +56,83 @@ module SecureTomb
 			File.open(@dbfile.path, "r") 
 		end
 
-		def __walkDir(path, filelist)
+		def __walkDir(path, &block)
 			Dir.entries(@localpath + path).each do |f|
 				relp = path + f
 				fullp = @localpath + relp
+				isdir = File.directory?(fullp)
 				if f != '.' && f != '..'
-					if File.directory?(fullp)
-						__walkDir(relp + '/', filelist)
+					if isdir 
+						relp = relp + '/'
+					end
+					row = @sql.execute("select mtime, size, perms, sha1 from files where path = ?",relp)
+					if isdir
+						if row.empty?
+							yield relp, true
+						end
+						__walkDir relp, &block
 					else
-						row = @sql.execute("select mtime, size, perms, sha1 from files where path = ?",relp)
 						fstat = File::Stat.new(fullp)
 						if row.empty? || 
 							row[0][0] < fstat.mtime.to_i ||
 							row[0][1] != fstat.size ||
 							row[0][3] != Digest::SHA1.file(fullp).hexdigest then
-							filelist.push(relp)
+							yield relp, false
 						end
 					end
+					@sql.execute('update or ignore files set viewed = 1 where path = ?', relp)
 				end
 			end
-			filelist
 		end
 	
-		def diff
-			row = @sql.execute("select localpath from meta limit 1;")
-			@localpath = row[0][0]
-			filelist = []
-			__walkDir('/', filelist)
-		end
-
 		def putDB(remote, cypher)
 			o = self.outstream
 			remote.put('fileset', cypher.encrypt(o))
 			o.close
 		end
 
-		def sync(filelist, remote, cypher)
-			filelist.each do |f|
+		def sync(remote, cypher)
+			row = @sql.execute('select localpath from meta limit 1;')
+			@localpath = row[0][0]
+			@sql.execute('update files set viewed = 0')
+			__walkDir '/'  do |f, isdir|
 				fullp = @localpath + f
 				print "Sync #{fullp} "
-				digest = Digest::SHA1.file(fullp).hexdigest
-				stat = File::Stat.new(fullp)
 				uuidlist = []
-				if stat.size > 0 
-					fstream = cypher.encrypt(File.open(fullp))
-					uuidlist = remote.putBlob(fstream)
-					fstream.close
-					puts "uploaded."
-				else
-					puts "nothing to upload"
-				end	
+				stat = File::Stat.new(fullp)
+				digest = ''
+				if !isdir
+					digest = Digest::SHA1.file(fullp).hexdigest
+					if stat.size > 0 
+						fstream = cypher.encrypt(File.open(fullp))
+						uuidlist = remote.putBlob(fstream)
+						fstream.close
+						print "uploaded."
+					else
+						print "nothing to upload"
+					end
+				end
 				@sql.execute("insert or ignore into files (path) values (?)", f)
-				@sql.execute("update files set sha1 = ?, mtime = ?, size = ? where path = ?", digest, stat.mtime.to_i, stat.size, f)
+				@sql.execute("update files set sha1 = ?, mtime = ?, size = ?, viewed = 1  where path = ?", digest, stat.mtime.to_i, stat.size, f)
 				row = @sql.execute("select id from files where path = ?", f)
 				uuidlist.each_index do |i|
 					@sql.execute("insert into blobs values (?,?,?)", row[0][0], uuidlist[i], i)
 				end
-
+		
 				putDB(remote, cypher)
+				print "\n"
 			end
+		
+			rows = @sql.execute('select path from files where viewed = 0')
+			if rows.length > 0
+				print "Forgeting " + rows.map{|x| x[0] }.join(' , ')
+				@sql.execute('delete from files where viewed = 0')
+				print "\n"
+				# XXX TODO CLEANUP BLOBS!!
+			end
+			putDB(remote, cypher)
+			puts "Done."
+		
 		end
 
 	end
