@@ -1,16 +1,22 @@
 module Cyphers
 	# null class for tests
 	class CLEAR
+		class Worker
+			def initialize(*params)
+			end
+
+			def process(data, state)
+				data
+			end
+		end
+
 		def initialize(*params)
 		end
-
-		def start_encrypting
+		def make_worker_to_decrypt
+			Worker.new()
 		end
-		def start_decrypting
-		end
-
-		def process(data, state)
-			data
+		def make_worker_to_encrypt
+			Worker.new()
 		end
 	end
 end
