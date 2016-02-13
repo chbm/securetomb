@@ -13,7 +13,9 @@ module SecureTomb
 			if stream then
 				File.copy_stream(stream, @dbfile)
 			else
+				@dbfile.sync= true
 				File.copy_stream(cypher.decrypt(remote.get('fileset')), @dbfile)
+				@dbfile.fsync
 			end
 			@sql = SQLite3::Database.new(@dbfile.path)
 		end

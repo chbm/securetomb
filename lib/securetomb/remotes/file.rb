@@ -24,7 +24,10 @@ module Remotes
 
 		def putBlob(input)
 			id = SecureRandom.uuid
-			File.copy_stream(input, File.open(@basePath + '/blobs/' + id, 'wb'))
+			File.open(@basePath + '/blobs/' + id, 'wb') do |f|
+				File.copy_stream(input, f)
+				f.close
+			end
 			[id]
 		end
 
@@ -33,7 +36,10 @@ module Remotes
 		end
 
 		def put(name, input)
-			File.copy_stream(input, File.open(@basePath + '/' + name, 'wb'))
+			File.open(@basePath + '/' + name, 'wb') do |f|
+				File.copy_stream(input, f)
+				f.close
+			end
 		end
 
 	end

@@ -2,6 +2,9 @@ require 'digest'
 require 'openssl'
 require 'filter_io'
 
+#require 'pry'
+
+
 module Cyphers
 	class AES256
 		class BadSignature < RuntimeError
@@ -33,6 +36,9 @@ module Cyphers
 			end
 
 			def process(data, state)
+
+				#binding.pry
+				
 				if @encrypting then
 					if state.bof? then
 						# inject version = 0, "aes256\0\0", cypheredkey, iv, hmac_sha1(iv, localkey)
