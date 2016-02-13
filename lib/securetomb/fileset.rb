@@ -101,14 +101,13 @@ module SecureTomb
 			__walkDir '/'  do |f, isdir|
 				fullp = @localpath + f
 				print "Sync #{fullp} "
-				uuidlist = []
 				stat = File::Stat.new(fullp)
 				digest = ''
 				if !isdir
 					digest = Digest::SHA1.file(fullp).hexdigest
 					if stat.size > 0 
 						fstream = cypher.encrypt(File.open(fullp))
-						uuidlist = remote.putBlob(fstream)
+						blobid = remote.putBlob(fstream)
 						fstream.close
 						print "uploaded."
 					else
@@ -121,9 +120,7 @@ module SecureTomb
 				@sql.execute("update files set sha1 = ?, mtime = ?, size = ?, viewed = 1  where path = ?", digest, stat.mtime.to_i, stat.size, f)
 				row = @sql.execute("select id from files where path = ?", f)
 				@sql.execute("delete from blobs where file = ?", row[0][0]) # no incremental updates of files
-				uuidlist.each_index do |i|
-					@sql.execute("insert into blobs values (?,?,?)", row[0][0], uuidlist[i], i)
-				end
+				@sql.execute("insert into blobs values (?,?,?)", row[0][0], blobid, 0)
 				@sql.commit
 
 				putDB(remote, cypher)

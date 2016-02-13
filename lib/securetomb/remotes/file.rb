@@ -28,7 +28,7 @@ module Remotes
 				File.copy_stream(input, f)
 				f.close
 			end
-			[id]
+			id
 		end
 
 		def get(name)
