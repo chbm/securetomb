@@ -21,11 +21,7 @@ module SecureTomb
 				raise UnknownCypher
 			end
 
-			begin
-				@cypher = Object.const_get('Cyphers::' + suite.upcase).new(seed, *params)
-			rescue
-				raise CypherFailed
-			end
+			@cypher = Object.const_get('Cyphers::' + suite.upcase).new(seed, *params)
 			@seed = seed
 		end
 
