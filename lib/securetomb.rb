@@ -28,7 +28,7 @@ module SecureTomb
 				:version => 0,
 				:name => name,
 				:cyphername => cypher_name,
-				:cypherparams => cypher_params,
+				:cypherparams => cypher_params[0],
 				:randomseed => Base64.encode64(randomseed)
 			})))
 
@@ -38,22 +38,27 @@ module SecureTomb
 			puts "Initialized #{name}"
 		end
 
-		def syncup()	
+		def _start_tomb
 			begin	
 				metafile = @remote.get('meta')
 			rescue Errno::ENOENT
 				raise NoTomb
 			end
 			meta = JSON.load(metafile)
-
 			@cypher = Cyphering.new(Base64.decode64(meta["randomseed"]), meta["cyphername"], meta["cypherparams"])
-
 			@fileset = FileSet.new(@remote, @cypher)
+		end
+
+		def syncup()	
+			_start_tomb
+
 			@fileset.sync(@remote, @cypher)
 		end
 
 		def syncdown(remoteurl)
+			_start_tomb
 
+			@fileset.download(dest)
 		end
 	end
 
