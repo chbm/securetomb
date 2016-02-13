@@ -18,11 +18,11 @@ module SecureTomb
 			end
 		end
 
-		def init(name, path, cypher_name, cypher_params)
+		def init(name, path, cypher_name, *cypher_params)
 			randomseed = Cyphering.randombytes
 
 
-			@cypher = Cyphering.new(randomseed, cypher_name, cypher_params) 
+			@cypher = Cyphering.new(randomseed, cypher_name, *cypher_params) 
 
 			@remote.put('meta', StringIO.new(JSON.generate({
 				:version => 0,

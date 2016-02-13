@@ -1,11 +1,11 @@
 require "./lib/securetomb"
-require "./lib/securetomb/cyphers/aes256"
+require "./lib/securetomb/cyphers/aes"
 require "test/unit"
 require "stringio"
 require "pp"
 
 module Cyphers
-	class AES256
+	class AES
 		attr_reader :masterkey
 		class Worker
 			attr_reader :keyiv, :localkey, :cypheredkey
@@ -31,10 +31,10 @@ class TestAes < Test::Unit::TestCase
 	def test_aes_sig
 		ENV["TOMBPASS"]= "teste"
 
-		aes = Cyphers::AES256.new("\x00" * 32, '')
+		aes = Cyphers::AES.new("\x00" * 32, [256])
 
 		masterkey_check = OpenSSL::PKCS5::pbkdf2_hmac_sha1('teste', "\x00" * 32 , 200000, 32)
-		basesig_check = "\x00aes256\x00\x00".b
+		basesig_check = "\x00aes256OF".b
 
 		assert(aes.masterkey == masterkey_check)
 
@@ -54,10 +54,25 @@ class TestAes < Test::Unit::TestCase
 		assert(part1+part2 == "\x00\x00")	
 	end
 
+	def test_aes_badlength
+		[ [1], [], ['a'] ].each do |l|
+			assert_raise SecureTomb::Cyphering::CypherFailed do 
+				SecureTomb::Cyphering.new("\x00" * 32, 'aes', l)
+			end
+		end
+
+		['256', '192'].each do |l|
+			assert_nothing_raised do 
+				SecureTomb::Cyphering.new("\x00" * 32, 'aes', [l])
+			end
+		end
+
+	end
+
 	def test_aes_crypt
 		ENV["TOMBPASS"]= "teste"
 
-		aes = SecureTomb::Cyphering.new("\x00" * 32, 'aes256', {})
+		aes = SecureTomb::Cyphering.new("\x00" * 32, 'aes', [256])
 		
 
 		origfile = Tempfile.new('aestestin')
@@ -85,7 +100,7 @@ class TestAes < Test::Unit::TestCase
 
 		
 	def test_aes_stress
-		aes = SecureTomb::Cyphering.new("\x00" * 32, 'aes256', {})
+		aes = SecureTomb::Cyphering.new("\x00" * 32, 'aes', ['256'])
 		randomstream = File.open('/dev/random')
 		(1..100).each do 
 			origfile = Tempfile.new('aestestin')

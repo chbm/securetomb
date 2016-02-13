@@ -1,5 +1,5 @@
 require 'filter_io'
-require "openssl"
+require 'openssl'
 
 
 module SecureTomb
@@ -15,7 +15,6 @@ module SecureTomb
 		end
 
 		def initialize(seed, suite, *params)
-
 			begin 
 				require './lib/securetomb/cyphers/' + suite
 			rescue LoadError
@@ -23,7 +22,7 @@ module SecureTomb
 			end
 
 			begin
-				@cypher = Object.const_get('Cyphers::' + suite.upcase).new(seed, params)
+				@cypher = Object.const_get('Cyphers::' + suite.upcase).new(seed, *params)
 			rescue
 				raise CypherFailed
 			end

@@ -1,31 +1,36 @@
 require 'digest'
 require 'openssl'
 require 'filter_io'
+require 'pp'
 
 #require 'pry'
 
 
 module Cyphers
-	class AES256
+	class AES
 		class BadSignature < RuntimeError
+		end
+
+		class BadLength < RuntimeError
 		end
 
 		class Worker
 			class NeedMoreData < RuntimeError
 			end
 
-			def initialize(engine, encrypt, masterkey, randomness)
+			def initialize(engine, kl, encrypt, masterkey, randomness)
 				@encrypting = encrypt
 				@masterkey = masterkey # jebus, __check_sig needs it
 				@engine = engine
-				@e = engine.new(256, :OFB)
+				@e = engine.new(kl, :OFB)
 				@keyiv = randomness.byteslice(16,16)
+				@sig = "aes" + kl.to_s + 'OF'
 
 				if @encrypting then
 					@e.encrypt
 					@iv = @e.random_iv
 					@localkey = @e.random_key
-					keyengine = engine.new(256,:OFB)
+					keyengine = engine.new(kl,:OFB)
 					keyengine.iv= @keyiv
 					keyengine.key= masterkey
 					@cypheredkey =  keyengine.update(@localkey) + keyengine.final
@@ -43,7 +48,7 @@ module Cyphers
 					if state.bof? then
 						# inject version = 0, "aes256\0\0", cypheredkey, iv, hmac_sha1(iv, localkey)
 					  h = OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new('sha1'),@localkey , @iv)
-						return "\x00aes256\x00\x00".b + @cypheredkey + @iv + h + @e.update(data)
+						return "\x00".b + @sig + @cypheredkey + @iv + h + @e.update(data)
 					elsif state.eof? then
 						return @e.update(data) + @e.final
 					else 
@@ -80,8 +85,8 @@ module Cyphers
 					raise NeedMoreData
 				end
 
-				if data.byteslice(0,9) != "\x00aes256\x00\x00"
-					raise Cyphers::AES256::BadSignature
+				if data.byteslice(0,9) != "\x00"+@sig
+					raise Cyphers::AES::BadSignature
 				end
 				temp = @engine.new(256, :OFB)
 				temp.decrypt
@@ -91,7 +96,7 @@ module Cyphers
 				@iv = data.byteslice(41,16)
 				h = OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new('sha1'), @localkey, @iv)
 				if h != data.byteslice(57,40) then
-					raise Cyphers::AES256::BadSignature
+					raise Cyphers::AES::BadSignature
 				end
 				@e.key= @localkey
 				@e.iv= @iv
@@ -104,6 +109,9 @@ module Cyphers
 
 
 		def initialize(seed, *params)
+			@keylength = (params[0].length && params[0][0].to_i) || 256
+			raise Cyphers::AES::BadLength unless @keylength == 256 || @keylength == 192 # nuting else
+							
 			@engine = OpenSSL::Cipher::AES
 			@randomness = seed
 			if ENV.key? "TOMBPASS"
@@ -116,11 +124,11 @@ module Cyphers
 		end
 
 		def make_worker_to_encrypt
-			Worker.new(@engine, true, @masterkey, @randomness)
+			Worker.new(@engine, @keylength, true, @masterkey, @randomness)
 		end
 
 		def make_worker_to_decrypt
-			Worker.new(@engine, false, @masterkey, @randomness)
+			Worker.new(@engine, @keylength, false, @masterkey, @randomness)
 		end
 
 	end
