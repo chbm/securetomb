@@ -13,6 +13,7 @@ module SecureTomb
 			if stream then
 				File.copy_stream(stream, @dbfile)
 			else
+				# TODO here we'd handle fileset versions
 				@dbfile.sync= true
 				File.copy_stream(cypher.decrypt(remote.get('fileset')), @dbfile)
 				@dbfile.fsync
@@ -114,13 +115,17 @@ module SecureTomb
 						print "nothing to upload"
 					end
 				end
+				
+				@sql.transaction
 				@sql.execute("insert or ignore into files (path) values (?)", f)
 				@sql.execute("update files set sha1 = ?, mtime = ?, size = ?, viewed = 1  where path = ?", digest, stat.mtime.to_i, stat.size, f)
 				row = @sql.execute("select id from files where path = ?", f)
+				@sql.execute("delete from blobs where file = ?", row[0][0]) # no incremental updates of files
 				uuidlist.each_index do |i|
 					@sql.execute("insert into blobs values (?,?,?)", row[0][0], uuidlist[i], i)
 				end
-		
+				@sql.commit
+
 				putDB(remote, cypher)
 				print "\n"
 			end
