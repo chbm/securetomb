@@ -25,6 +25,7 @@ module Cyphers
 				@e = engine.new(kl, :OFB)
 				@keyiv = randomness.byteslice(16,16)
 				@sig = "aes" + kl.to_s + 'OF'
+				@initialized = false
 
 				if @encrypting then
 					@e.encrypt
@@ -36,7 +37,6 @@ module Cyphers
 					@cypheredkey =  keyengine.update(@localkey) + keyengine.final
 				else
 					@e.decrypt
-					@initialized = false
 				end
 			end
 
@@ -45,15 +45,16 @@ module Cyphers
 				#binding.pry
 				
 				if @encrypting then
-					if state.bof? then
+					output = ""
+					if (not @initialized) then
 						# inject version = 0, "aes256\0\0", cypheredkey, iv, hmac_sha1(iv, localkey)
 					  h = OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new('sha1'),@localkey , @iv)
-						return "\x00".b + @sig + @cypheredkey + @iv + h + @e.update(data)
-					elsif state.eof? then
-						return @e.update(data) + @e.final
-					else 
-						return @e.update(data)
+						output << "\x00".b + @sig + @cypheredkey + @iv + h
+						@initialized = true
 					end
+					output << @e.update(data)
+					output << @e.final if state.eof?
+					return output
 				else #decrypt
 					if (not @initialized) then
 						begin
