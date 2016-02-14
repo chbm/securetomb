@@ -18,11 +18,11 @@ module Remotes
 			end
 		end
 
-		def getBlob(id)
+		def get_blob(id)
 			File.open(@basePath + '/blobs/' + id, 'rb')
 		end
 
-		def putBlob(input)
+		def put_blob(input)
 			id = SecureRandom.uuid
 			File.open(@basePath + '/blobs/' + id, 'wb') do |f|
 				File.copy_stream(input, f)

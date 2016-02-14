@@ -6,19 +6,19 @@ module Remotes
 		def initialize(url)
 		end
 
-		def getBlob(id)
+		def get_blob(id)
 			File.open('/dev/null')
 		end
 
-		def putBlob(id)
+		def put_blob(id)
 			File.open('/dev/null', 'w')
 		end
 
-		def getFileset
+		def get
 			File.open('/dev/null')
 		end
 
-		def putFileset
+		def put
 			File.open('/dev/null', 'w')
 		end
 	end

@@ -109,7 +109,7 @@ module SecureTomb
 					digest = Digest::SHA1.file(fullp).hexdigest
 					if stat.size > 0 
 						fstream = cypher.encrypt(File.open(fullp))
-						blobid = remote.putBlob(fstream)
+						blobid = remote.put_blob(fstream)
 						fstream.close
 						print "uploaded."
 					else
@@ -164,7 +164,7 @@ module SecureTomb
 					f = File.new(fullpath, 'wb', row[2])
 					if row[3] > 0 then
 						blob = @sql.execute('select blob from blobs where file = ? order by ord asc', row[0])
-						File.copy_stream(cypher.decrypt(remote.getBlob(blob[0][0])), f)
+						File.copy_stream(cypher.decrypt(remote.get_blob(blob[0][0])), f)
 						f.fsync
 						raise FailedRestore if Digest::SHA1.file(fullpath).hexdigest != row[4]
 					end

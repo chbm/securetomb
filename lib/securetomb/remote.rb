@@ -31,10 +31,28 @@ module SecureTomb
 			end
 		end
 
-		def method_missing(m, *args)
-			@backend.send(m, *args)
+		def get_blob(id)
+			@backend.get_blob(id)
 		end
 
+		def put_blob(input)
+			@backend.put_blob(input)
+		end
+
+		def delete_blob(id)
+			if @backend.respond.to? :delete_blob
+				@backend.delete_blob(id)
+			end
+		end
+
+		def get(name)
+			@backend.get(name)
+		end
+
+		def put(name, input)
+			@backend.put(name, input)
+		end
+		
 		attr_reader :backend
 	end
 
