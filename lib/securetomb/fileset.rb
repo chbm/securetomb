@@ -119,7 +119,7 @@ module SecureTomb
 				
 				@sql.transaction
 				@sql.execute("insert or ignore into files (path) values (?)", f)
-				@sql.execute("update files set sha1 = ?, mtime = ?, size = ?, viewed = 1  where path = ?", digest, stat.mtime.to_i, stat.size, f)
+				@sql.execute("update files set sha1 = ?, mtime = ?, size = ?, perms = ?, viewed = 1  where path = ?", digest, stat.mtime.to_i, stat.size, stat.mode, f)
 				row = @sql.execute("select id from files where path = ?", f)
 				@sql.execute("delete from blobs where file = ?", row[0][0]) # no incremental updates of files
 				@sql.execute("insert into blobs values (?,?,?)", row[0][0], blobid, 0)
@@ -152,11 +152,14 @@ module SecureTomb
 			end
 			_ensure dest
 			@sql.execute('select id, path, perms, size, sha1 from files order by id asc') do |row|
-				pp row
 				fullpath = dest + '/' + row[1]
 				puts "restoring #{fullpath}"
-				if row[1].end_with? '/' 
+				if row[1].end_with? '/'
+					begin
 					Dir.mkdir fullpath, row[2]
+					rescue Errno::EEXIST
+						FileUtils.chmod row[2], fullpath
+					end
 				else
 					f = File.new(fullpath, 'wb', row[2])
 					if row[3] > 0 then
