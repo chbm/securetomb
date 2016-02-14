@@ -28,9 +28,10 @@ Clamp do
 
 	subcommand ["down", "syncdown"], "sychronize remote to local (restore)" do
 		parameter "remote", "remote url", :attribute_name => :remote
+		parameter "destination", "where to download to", :attribute_name => :destination, :required => false
 		def execute
 			tomb = SecureTomb::Make.new(remote)
-			tomb.syncdown
+			tomb.syncdown(destination)
 		end
 	end
 

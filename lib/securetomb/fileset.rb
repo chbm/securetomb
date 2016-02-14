@@ -4,6 +4,8 @@ require 'socket'
 require 'digest'
 require 'securerandom'
 
+require 'pry'
+
 
 module SecureTomb
 
@@ -135,8 +137,38 @@ module SecureTomb
 				# XXX TODO CLEANUP BLOBS!!
 			end
 			putDB(remote, cypher)
-			puts "Done."
-		
+			puts "Done."	
+		end
+
+		def _ensure path
+			s = File::Stat.new(path)
+			raise BadDest unless s.directory? && s.writable?
+		end
+
+		def download(remote, cypher, dest)
+			if !dest then
+				r = @sql.execute('select localpath from meta')
+				dest = r[0][0]
+			end
+			_ensure dest
+			@sql.execute('select id, path, perms, size, sha1 from files order by id asc') do |row|
+				pp row
+				fullpath = dest + '/' + row[1]
+				puts "restoring #{fullpath}"
+				if row[1].end_with? '/' 
+					Dir.mkdir fullpath, row[2]
+				else
+					f = File.new(fullpath, 'wb', row[2])
+					if row[3] > 0 then
+						blob = @sql.execute('select blob from blobs where file = ? order by ord asc', row[0])
+						File.copy_stream(cypher.decrypt(remote.getBlob(blob[0][0])), f)
+						f.fsync
+						raise FailedRestore if Digest::SHA1.file(fullpath).hexdigest != row[4]
+					end
+					f.close
+				end
+			end
+			puts "done!"
 		end
 
 	end

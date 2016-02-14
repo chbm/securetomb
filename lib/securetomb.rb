@@ -55,10 +55,10 @@ module SecureTomb
 			@fileset.sync(@remote, @cypher)
 		end
 
-		def syncdown(remoteurl)
+		def syncdown(destination)
 			_start_tomb
 
-			@fileset.download(dest)
+			@fileset.download(@remote, @cypher, destination)
 		end
 	end
 
