@@ -5,9 +5,18 @@ Backup to the cloud with local encryption
 I'm not the a security professional nor do I play one on TV. I know enough about crypto to trust my data with this program and had the design critiqued by security professionals. YMMV
 
 ## How to use 
-```securetomb init file:///backups backupname /interesting/stuff aes 256```
-```securetomb syncup file:///backups```
-```securetomb download file:///backups /restore/path```
+
+```
+securetomb init file:///backups backupname /interesting/stuff aes 256
+```
+
+```
+securetomb syncup file:///backups
+```
+
+```
+securetomb download file:///backups /restore/path
+```
 
 Securetomb is not too bandwith eficient because security consideration but it's basically smart 
 regarding chosing files to upload. Only unix path and mode are preserved. 
